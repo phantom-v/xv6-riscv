@@ -3,6 +3,7 @@
         # kernel.ld causes the following code to
         # be placed at 0x80000000.
 .section .text
+.global _entry
 _entry:
 	# set up a stack for C.
         # stack0 is declared in start.c,
@@ -18,3 +19,10 @@ _entry:
         call start
 spin:
         j spin
+
+
+.section .data
+.global ramdisk_start, ramdisk_end
+ramdisk_start:
+.incbin "fs.img"
+ramdisk_end:

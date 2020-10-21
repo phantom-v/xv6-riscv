@@ -55,9 +55,15 @@ int             writei(struct inode*, int, uint64, uint, uint);
 void            itrunc(struct inode*);
 
 // ramdisk.c
-void            ramdiskinit(void);
-void            ramdiskintr(void);
-void            ramdiskrw(struct buf*);
+extern char ramdisk_start;
+extern char ramdisk_end;
+
+#define RAMDISK (&ramdisk_start)
+#define RAMDISK_SIZE (&ramdisk_end - RAMDISK)
+
+void            ramdisk_init(void);
+void            ramdisk_intr(void);
+void            ramdisk_rw(struct buf*, int);
 
 // kalloc.c
 void*           kalloc(void);
