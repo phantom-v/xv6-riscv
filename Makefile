@@ -50,6 +50,7 @@ TOOLPREFIX := $(shell if riscv64-unknown-elf-objdump -i 2>&1 | grep 'elf64-big' 
 endif
 
 QEMU = qemu-system-riscv64
+SPIKE = spike
 
 CC = $(TOOLPREFIX)gcc
 AS = $(TOOLPREFIX)gas
@@ -61,7 +62,7 @@ CFLAGS = -Wall -Werror -O -fno-omit-frame-pointer -ggdb
 CFLAGS += -MD
 CFLAGS += -mcmodel=medany
 CFLAGS += -ffreestanding -fno-common -nostdlib -mno-relax
-CFLAGS += -I.
+CFLAGS += -I. -march=rv64ima -mabi=lp64 -g
 CFLAGS += $(shell $(CC) -fno-stack-protector -E -x c /dev/null >/dev/null 2>&1 && echo -fno-stack-protector)
 
 # Disable PIE when possible (for Ubuntu 16.10 toolchain)
@@ -80,7 +81,7 @@ $K/kernel: $(OBJS) $K/kernel.ld $U/initcode
 	$(OBJDUMP) -t $K/kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $K/kernel.sym
 
 $U/initcode: $U/initcode.S
-	$(CC) $(CFLAGS) -march=rv64g -nostdinc -I. -Ikernel -c $U/initcode.S -o $U/initcode.o
+	$(CC) $(CFLAGS) -march=rv64ima -mabi=lp64 -nostdinc -I. -Ikernel -c $U/initcode.S -o $U/initcode.o
 	$(LD) $(LDFLAGS) -N -e start -Ttext 0 -o $U/initcode.out $U/initcode.o
 	$(OBJCOPY) -S -O binary $U/initcode.out $U/initcode
 	$(OBJDUMP) -S $U/initcode.o > $U/initcode.asm
@@ -96,6 +97,16 @@ _%: %.o $(ULIB)
 	$(OBJDUMP) -t $@ | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$$/d' > $*.sym
 
 $K/entry.o: fs.img
+	$(CC) $(CFLAGS) -c -o $K/entry.o $K/entry.S
+
+$K/kernelvec.o:
+	$(CC) $(CFLAGS) -c -o $K/kernelvec.o $K/kernelvec.S
+
+$K/swtch.o: 
+	$(CC) $(CFLAGS) -c -o $K/swtch.o $K/swtch.S
+
+$K/trampoline.o: 
+	$(CC) $(CFLAGS) -c -o $K/trampoline.o $K/trampoline.S
 
 $U/usys.S : $U/usys.pl
 	perl $U/usys.pl > $U/usys.S
@@ -150,13 +161,13 @@ clean:
 	$(UPROGS)
 
 # try to generate a unique GDB port
-GDBPORT = $(shell expr `id -u` % 5000 + 25000)
+GDBPORT = 3333
 # QEMU's gdb stub command line changed in 0.11
 QEMUGDB = $(shell if $(QEMU) -help | grep -q '^-gdb'; \
 	then echo "-gdb tcp::$(GDBPORT)"; \
 	else echo "-s -p $(GDBPORT)"; fi)
 ifndef CPUS
-CPUS := 3
+CPUS := 1
 endif
 
 QEMUOPTS = -machine virt -bios none -kernel $K/kernel -m 128M -smp $(CPUS) -nographic
@@ -172,4 +183,12 @@ qemu: $K/kernel
 qemu-gdb: $K/kernel .gdbinit fs.img
 	@echo "*** Now run 'gdb' in another window." 1>&2
 	$(QEMU) $(QEMUOPTS) -S $(QEMUGDB)
+
+spike: $K/kernel
+	spike $<
+
+spike-gdb: $K/kernel
+	sed "s/:1234/:3333/" < .gdbinit.tmpl-riscv > .gdbinit
+	spike -H --rbb-port=9824 $< & sleep 1; openocd -f spike.cfg
+
 
