@@ -32,6 +32,7 @@ start()
 
   // disable paging for now.
   w_satp(0);
+  sfence_vma();
 
   // delegate all interrupts and exceptions to supervisor mode.
   w_medeleg(0xffff);
