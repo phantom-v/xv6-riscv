@@ -9,6 +9,9 @@ struct sleeplock;
 struct stat;
 struct superblock;
 
+#define Log(format, ...) \
+  printf("[%s,%d,%s] " format "\n", __FILE__, __LINE__, __func__, ## __VA_ARGS__)
+
 // bio.c
 void            binit(void);
 struct buf*     bread(uint, uint);
