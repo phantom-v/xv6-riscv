@@ -95,6 +95,7 @@ userret:
         # switch to the user page table.
         csrw satp, a1
         sfence.vma zero, zero
+        fence.i
 
         # put the saved user a0 in sscratch, so we
         # can swap it with our a0 (TRAPFRAME) in the last step.
