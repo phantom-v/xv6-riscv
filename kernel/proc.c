@@ -515,6 +515,8 @@ sched(void)
   intena = mycpu()->intena;
   swtch(&p->context, &mycpu()->context);
   mycpu()->intena = intena;
+
+  fence_i();
 }
 
 // Give up the CPU for one scheduling round.
