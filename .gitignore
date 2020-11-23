@@ -16,3 +16,5 @@ kernel/kernel
 user/usys.S
 .gdbinit
 log
+kernel.bin
+xv6.bin.txt

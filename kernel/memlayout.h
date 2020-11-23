@@ -18,7 +18,7 @@
 // PHYSTOP -- end RAM used by the kernel
 
 // qemu puts UART registers here in physical memory.
-#define UART0 0x10000000L
+#define UART0 0x41000000L
 #define UART0_IRQ 1
 
 // virtio mmio interface
@@ -26,12 +26,12 @@
 #define VIRTIO0_IRQ 2
 
 // core local interruptor (CLINT), which contains the timer.
-#define CLINT 0x2000000L
+#define CLINT 0x38000000L
 #define CLINT_MTIMECMP(hartid) (CLINT + 0x4000 + 8*(hartid))
 #define CLINT_MTIME (CLINT + 0xBFF8) // cycles since boot.
 
 // qemu puts platform-level interrupt controller (PLIC) here.
-#define PLIC 0x0c000000L
+#define PLIC 0x3c000000L
 #define PLIC_PRIORITY (PLIC + 0x0)
 #define PLIC_PENDING (PLIC + 0x1000)
 #define PLIC_MENABLE(hart) (PLIC + 0x2000 + (hart)*0x100)
